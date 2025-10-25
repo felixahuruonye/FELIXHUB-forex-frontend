@@ -1,270 +1,197 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Forex Timezone Pro — FelixHub</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FelixHub Forex World Time</title>
   <style>
-    /* Layout + visual fixes for mobile & desktop */
-    :root{--primary:#0ea5e9;--muted:#64748b;--card-bg:#fff}
-    body{font-family:Inter,system-ui,Arial;background:#f3f4f6;padding:18px;color:#0f172a;margin:0}
-    .container{max-width:980px;margin:0 auto}
-    header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px}
-    header h1{margin:0;font-size:20px}
-    header .subtitle{color:var(--muted);font-size:13px}
-    .card{background:var(--card-bg);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:12px}
-    input, select, button, textarea{padding:10px;border-radius:8px;border:1px solid #e6e7ea;font-size:15px}
-    .row{display:flex;gap:10px;align-items:center}
-    .row .col{flex:1}
-    .row .small-col{width:110px}
-    .small{font-size:13px;color:var(--muted)}
-    .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
-    .time-card{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:10px;border:1px solid #e6eef8}
-    .button-primary{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-    .button-secondary{background:#eef2f7;color:#0f172a;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
-    .muted{color:var(--muted);font-size:13px}
-    .add-row-btn{display:block;width:100%;padding:12px;border-radius:10px;background:var(--primary);color:#fff;border:none;margin-top:10px}
-    .removeBtn{background:#fde68a;border:none;padding:8px;border-radius:8px;cursor:pointer}
-    @media(max-width:520px){
-      .row{flex-direction:column;align-items:stretch}
-      .row .small-col{width:auto}
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f0f3f8;
+      color: #222;
+      text-align: center;
+      padding: 20px;
+    }
+    header {
+      background: #004aad;
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    h1 { margin: 0; font-size: 1.8em; }
+    .form-container {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .input-group {
+      margin: 10px 0;
+    }
+    input, select, button {
+      padding: 10px;
+      width: 90%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+    button {
+      background: #004aad;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background: #003580; }
+    .card {
+      background: white;
+      margin: 15px auto;
+      padding: 15px;
+      border-radius: 12px;
+      max-width: 500px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    .premium {
+      margin-top: 20px;
+      background: #fffbcc;
+      padding: 15px;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>FELIXHUB WorldTimezone Pro 🌍</h1>
-      <div class="subtitle">Free trial: 10 premium IP test — then subscription required</div>
-    </header>
+  <header>
+    <h1>🌍 FelixHub Forex World Time</h1>
+    <p>Get real-time world clock data for your forex trading</p>
+  </header>
 
-    <div class="card">
-      <div class="small">Select continent (optional)</div>
-
-      <div id="multiContainer"></div>
-
-      <button id="addBtn" class="add-row-btn">+ Add a country / city</button>
-
-      <div style="height:12px"></div>
-      <div class="small">Tip: Type "San Francisco, California" or "Owerri, Nigeria"</div>
-
-      <div style="height:12px"></div>
-      <div class="row" style="margin-top:12px">
-        <button id="sendBtn" class="button-primary" style="flex:1">Get Times</button>
-        <button id="ipBtn" class="button-secondary" style="width:160px;margin-left:0">Use My IP (premium)</button>
-      </div>
-
-      <div style="height:12px"></div>
-      <div class="small">Searches left <span id="searchLeft">20</span> • Premium trial left <span id="trialLeft">1</span></div>
-    </div>
-
-    <div id="results" class="results"></div>
-
-    <div class="card">
-      <h3>Upgrade to Premium</h3>
-      <p class="small">Premium unlocks: more continents and countries, IP lookup, postal/ZIP codes, 100+ simultaneous cities, and forex tools.</p>
-      <a id="payLink" href="https://paystack.shop/pay/felixhub-premium" target="_blank">
-        <button class="button-primary">Subscribe / Pay (Paystack)</button>
-      </a>
-      <div style="height:8px"></div>
-      <div class="small">After payment you’ll be redirected and your premium features will unlock automatically.</div>
-    </div>
-
-    <footer style="margin-top:18px;text-align:center;color:#94a3b8;">Built by FelixHub © 2025</footer>
-  </div>
-
-<script>
-/* ========== CONFIG ========== */
-const BACKEND = "https://felixhub-forex-backend.onrender.com"; // 
-const PAYSTACK_PAGE = "https://paystack.shop/pay/felixhub-premium"; 
-
-/* ========== UI & State ========= */
-const multiContainer = document.getElementById('multiContainer');
-const addBtn = document.getElementById('addBtn');
-const sendBtn = document.getElementById('sendBtn');
-const ipBtn = document.getElementById('ipBtn');
-const results = document.getElementById('results');
-const searchLeftEl = document.getElementById('searchLeft');
-const trialLeftEl = document.getElementById('trialLeft');
-const payLink = document.getElementById('payLink');
-
-const LS_TOKEN_KEY = 'ftz_token';
-const LS_COUNTS_KEY = 'ftz_counts';
-
-function loadState(){
-  const t = localStorage.getItem(LS_TOKEN_KEY);
-  const c = JSON.parse(localStorage.getItem(LS_COUNTS_KEY) || '{}');
-  return { token: t, counts: { totalSearches: c.totalSearches || 0, premiumTrialsUsed: c.premiumTrialsUsed || 0 } };
-}
-function saveCounts(counts){ localStorage.setItem(LS_COUNTS_KEY, JSON.stringify(counts)); refreshCountsUI(); }
-function saveToken(tok){ localStorage.setItem(LS_TOKEN_KEY, tok); refreshCountsUI(); }
-function refreshCountsUI(){ const s=loadState(); searchLeftEl.innerText = Math.max(0,20-(s.counts.totalSearches||0)); trialLeftEl.innerText = Math.max(0,10-(s.counts.premiumTrialsUsed||0)); }
-
-/* ========== Row builder ========== */
-function makeRow(){
-  const wrapper = document.createElement('div');
-  wrapper.className = 'row';
-  wrapper.style.marginTop = '10px';
-  wrapper.innerHTML = `
-    <div class="col">
-      <select class="continent">
-        <option value="">Any Continent</option>
-        <option>Africa</option><option>Asia</option><option>Europe</option>
-        <option>North America</option><option>South America</option><option>Oceania</option>
-        <option>Antarctica</option>
+  <div class="form-container">
+    <div class="input-group">
+      <select id="continent">
+        <option value="">Select Continent</option>
+        <option>Africa</option>
+        <option>Europe</option>
+        <option>Asia</option>
+        <option>North America</option>
+        <option>South America</option>
+        <option>Oceania</option>
       </select>
     </div>
-    <div class="col">
-      <input class="country" placeholder="Country (e.g. United States / Nigeria)">
+
+    <div class="input-group">
+      <input type="text" id="country" placeholder="Enter Country (e.g. USA)" />
     </div>
-    <div class="col">
-      <input class="city" placeholder="City (e.g. San Francisco / Owerri)">
+
+    <div class="input-group">
+      <input type="text" id="city" placeholder="Enter City (e.g. San Francisco)" />
     </div>
-    <div class="small-col">
-      <button class="removeBtn">Remove</button>
-    </div>
-  `;
-  wrapper.querySelector('.removeBtn').onclick = ()=> wrapper.remove();
-  return wrapper;
-}
-function ensureOneRow(){ if (multiContainer.children.length === 0) multiContainer.appendChild(makeRow()); }
 
-/* init */
-ensureOneRow();
-refreshCountsUI();
+    <button id="getTime">Get Time</button>
+    <button id="useIP">Use My IP</button>
+    <button id="addAnother">+ Add Another Country</button>
+  </div>
 
-/* ========== Helper: show a time card ========== */
-function addTimeCard(title, timezone, datetime, extras){
-  const d = document.createElement('div');
-  d.className = 'time-card';
-  d.innerHTML = `<div style="font-weight:600">${title}</div>
-                 <div style="margin-top:6px">${timezone || ''}</div>
-                 <div style="margin-top:6px">${new Date(datetime).toLocaleString()}</div>
-                 <div style="margin-top:8px;font-size:13px;color:#475569">${extras || ''}</div>`;
-  results.prepend(d);
-}
+  <div id="results"></div>
 
-/* ========== API helpers ========== */
-async function apiPost(path, body){
-  const token = localStorage.getItem(LS_TOKEN_KEY);
-  const headers = {'Content-Type':'application/json'};
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const r = await fetch(BACKEND + path, { method:'POST', headers, body: JSON.stringify(body) });
-  return r.json();
-}
+  <div id="premium" class="premium" style="display:none;">
+    <h3>Upgrade for Unlimited Access</h3>
+    <p>You've reached your free search limit. Get premium access to unlock more countries, cities, and live IP data.</p>
+    <a href="https://paystack.com/pay/felixhub-forex-subscription" target="_blank">
+      <button>Upgrade Now</button>
+    </a>
+  </div>
 
-/* ========== MAIN: Get times for all rows ========== */
-sendBtn.onclick = async () => {
-  const rows = Array.from(document.querySelectorAll('.row'));
-  const queries = [];
-  for (const r of rows){
-    const country = (r.querySelector('.country')?.value || '').trim();
-    const city = (r.querySelector('.city')?.value || '').trim();
-    if (country || city) {
-      // Use combined string for geocode query
-      const q = city ? (city + ', ' + country) : country;
-      queries.push({ q });
-    }
-  }
-  if (queries.length === 0) return alert('Add at least one city or country.');
+  <script>
+    const backendUrl = "https://felixhub-forex-backend.onrender.com";
+    let searchCount = 0;
 
-  // quota check
-  const state = loadState();
-  if (!state.token && state.counts.totalSearches + queries.length > 20) {
-    // if any remaining, show prompt
-    alert('Free search limit reached. Please subscribe to continue.');
-    return;
-  }
-
-  // Clear results
-  results.innerHTML = '';
-
-  // Send to backend multi endpoint
-  try {
-    const res = await fetch(BACKEND + '/api/multi-time', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json', 'Authorization': state.token ? ('Bearer ' + state.token) : ''},
-      body: JSON.stringify({ queries })
-    });
-    const j = await res.json();
-    if (j.upgrade) {
-      alert('Free limit reached. Please subscribe.');
-      return;
-    }
-    if (!j.ok) {
-      alert('Error: ' + JSON.stringify(j));
-      return;
-    }
-    // render results
-    for (const it of j.results) {
-      if (it.error) addTimeCard(it.q, 'Not found', new Date().toISOString(), it.error);
-      else {
-        const tz = it.timezone || it.raw_time?.timeZone || 'unknown';
-        const dt = it.datetime || it.raw_time?.dateTime || new Date().toISOString();
-        const extras = `lat:${it.lat} lon:${it.lon} • ${it.display_name}`;
-        addTimeCard(it.display_name, tz, dt, extras);
+    async function fetchTime(continent, country, city) {
+      try {
+        const response = await fetch(`${backendUrl}/api/timezone?continent=${continent}&country=${country}&city=${city}`);
+        const data = await response.json();
+        if (data.datetime) {
+          return { success: true, time: data.datetime };
+        } else {
+          return { success: false, error: "Unable to get time" };
+        }
+      } catch (e) {
+        return { success: false, error: e.message };
       }
     }
-    // update count
-    state.counts.totalSearches = (state.counts.totalSearches || 0) + (j.results ? j.results.length : 0);
-    saveCounts(state.counts);
-    if (!state.token && state.counts.totalSearches >= 20) alert('You have used up the free searches. Subscribe to continue.');
-  } catch (e) {
-    console.error(e);
-    alert('Request failed: ' + e.message);
-  }
-};
 
-/* ========== IP lookup (premium or 10 free trial) ========== */
-ipBtn.onclick = async () => {
-  const state = loadState();
-  if (!state.token && state.counts.premiumTrialsUsed >= 10) return alert('Premium trial used. Subscribe to continue.');
-
-  try {
-    const r = await fetch(BACKEND + '/api/ip', { headers: { 'Authorization': state.token ? ('Bearer ' + state.token) : '' }});
-    const j = await r.json();
-    if (j.upgrade) return alert('Premium required. Please subscribe.');
-
-    const d = j.data || j;
-    let lat=null, lon=null;
-    if (d.latitude && d.longitude) { lat = d.latitude; lon = d.longitude; }
-    if (d.loc) { const [la,lo] = d.loc.split(','); lat=la; lon=lo; }
-    if (lat && lon) {
-      const t = await apiPost('/api/time', { lat, lon });
-      if (t.ok) addTimeCard('My IP Location: ' + (d.city || d.ip || ''), t.data.timezone, t.data.datetime, `IP: ${d.ip || ''} • ${d.country_name || d.country || ''}`);
-      else addTimeCard('IP Time Error','error', new Date().toISOString(), JSON.stringify(t));
-    } else {
-      // show ip info
-      addTimeCard('IP Info', d.timezone || 'unknown', d.date_time || new Date().toISOString(), JSON.stringify(d));
+    async function fetchIP() {
+      try {
+        const res = await fetch(`${backendUrl}/api/ipgeo`);
+        const data = await res.json();
+        alert(`🌍 Your IP: ${data.ip}\nCountry: ${data.country_name}\nCity: ${data.city}\nTime Zone: ${data.timezone}`);
+      } catch (e) {
+        alert("Error fetching your IP info");
+      }
     }
-    if (!state.token) { state.counts.premiumTrialsUsed = (state.counts.premiumTrialsUsed || 0) + 10; saveCounts(state.counts); if (state.counts.premiumTrialsUsed>=10) alert('Free premium trial used. Subscribe to continue.'); }
-  } catch (e) {
-    console.error(e);
-    alert('IP lookup failed: ' + e.message);
-  }
-};
 
-/* ========== Add row button ========== */
-addBtn.onclick = () => {
-  multiContainer.appendChild(makeRow());
-};
+    document.getElementById("getTime").addEventListener("click", async () => {
+      const continent = document.getElementById("continent").value.trim();
+      const country = document.getElementById("country").value.trim();
+      const city = document.getElementById("city").value.trim();
 
-/* ========== Paystack verify on load (redirect from Paystack) ========== */
-async function checkPaystackReferenceOnLoad(){
-  const params = new URLSearchParams(location.search);
-  const_reference = params.get('reference') || params.get('trxref') || null;
-  if (!const_reference) return;
-  try {
-    const r = await fetch(BACKEND + '/api/verify-paystack', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reference: const_reference })
+      if (!continent || !country || !city) {
+        alert("Please fill all fields!");
+        return;
+      }
+
+      searchCount++;
+      if (searchCount > 20) {
+        document.getElementById("premium").style.display = "block";
+        return;
+      }
+
+      const result = await fetchTime(continent, country, city);
+      const resultsDiv = document.getElementById("results");
+      const card = document.createElement("div");
+      card.className = "card";
+
+      if (result.success) {
+        card.innerHTML = `
+          <h3>${city}, ${country}</h3>
+          <p>Continent: ${continent}</p>
+          <p>🕒 Time: ${new Date(result.time).toLocaleString()}</p>
+        `;
+      } else {
+        card.innerHTML = `<p>Error: ${result.error}</p>`;
+      }
+      resultsDiv.appendChild(card);
     });
-    const j = await r.json();
-    if (j.ok && j.token) { saveToken(j.token); alert('Payment verified — premium unlocked!'); history.replaceState(null,'',location.pathname); }
-    else alert('Payment verification failed.');
-  } catch (e) { console.error(e); alert('Verification error: ' + e.message); }
-}
-checkPaystackReferenceOnLoad();
 
-</script>
+    document.getElementById("useIP").addEventListener("click", fetchIP);
+
+    document.getElementById("addAnother").addEventListener("click", () => {
+      const container = document.querySelector(".form-container");
+      const newForm = document.createElement("div");
+      newForm.innerHTML = `
+        <div class="input-group">
+          <select class="continent">
+            <option value="">Select Continent</option>
+            <option>Africa</option>
+            <option>Europe</option>
+            <option>Asia</option>
+            <option>North America</option>
+            <option>South America</option>
+            <option>Oceania</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <input type="text" class="country" placeholder="Enter Country" />
+        </div>
+        <div class="input-group">
+          <input type="text" class="city" placeholder="Enter City" />
+        </div>
+      `;
+      container.insertBefore(newForm, document.getElementById("getTime"));
+    });
+  </script>
 </body>
 </html>
