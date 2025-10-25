@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Forex And WorldTimezone Pro — FelixHub</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Inter, system-ui, Arial; background:#f3f4f6; padding:18px; color:#0f172a;}
+    .container{max-width:960px;margin:0 auto;}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+    h1{margin:0;font-size:20px;}
+    .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:12px;}
+    input, select, button, textarea{padding:10px;border-radius:8px;border:1px solid #e6e7ea;font-size:15px;width:100%;}
+    .row{display:flex;gap:10px;}
+    .row > *{flex:1;}
+    .small{font-size:13px;color:#475569;}
+    .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px;}
+    .time-card{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:10px;border:1px solid #e6eef8;}
+    .button-primary{background:#0ea5e9;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;}
+    .muted{color:#64748b;font-size:13px;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WorldTimezone Pro 🌎🌍</h1>
+      <div class="muted">Free trial: 5 premium IP test — then subscription required</div>
+    </header>
+
+    <div class="card">
+      <div class="small">Select continent (optional)</div>
+      <select id="continent">
+        <option value="">All Continents</option>
+        <option>Africa</option><option>Asia</option><option>Europe</option>
+        <option>North America</option><option>South America</option><option>Oceania</option>
+        <option>Antarctica</option>
+      </select>
+
+      <div style="height:12px"></div>
+
+      <div id="multiContainer"></div>
+      <div style="height:12px"></div>
+      <button id="addBtn" class="button-primary">Add a country / city</button>
+
+      <div style="height:12px"></div>
+      <div class="small">Tip: Type "San Francisco, California" or "Owerri, Nigeria"</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button id="sendBtn" class="button-primary">Get Times</button>
+        <button id="ipBtn">Use My IP (premium)</button>
+      </div>
+
+      <div style="height:12px"></div>
+      <div class="small">
+        Searches left <span id="searchLeft">20</span> • Premium trial left <span id="trialLeft">1</span>
+      </div>
+    </div>
+
+    <div id="results" class="results"></div>
+
+    <div class="card">
+      <h3>Upgrade to Premium</h3>
+      <p class="small">Premium unlocks: more continents and countries, IP lookup, postal/ZIP codes, 100+ simultaneous cities, and more forex tools.</p>
+      <a id="payLink" href="https://paystack.shop/pay/felixhub-premium" target="_blank">
+        <button class="button-primary">Subscribe / Pay (Paystack)</button>
+      </a>
+      <div style="height:8px"></div>
+      <div class="small">After payment you’ll be redirected and your premium features will unlock automatically.</div>
+    </div>
+
+    <footer style="margin-top:18px;text-align:center;color:#94a3b8;">Built by FelixHub © 2025 </footer>
+  </div>
+
+<script>
+  // CONFIG — Update these before upload
+  const BACKEND = 'https://your-backend-name.onrender.com'; 
+  const PAYSTACK_PAGE = 'https://paystack.shop/pay/felixhub-premium'; 
+
+  // UI + logic
+  const multiContainer = document.getElementById('multiContainer');
+  const addBtn = document.getElementById('addBtn');
+  const sendBtn = document.getElementById('sendBtn');
+  const ipBtn = document.getElementById('ipBtn');
+  const results = document.getElementById('results');
+  const searchLeftEl = document.getElementById('searchLeft');
+  const trialLeftEl = document.getElementById('trialLeft');
+
+  const LS_TOKEN_KEY = 'ftz_token';
+  const LS_COUNTS_KEY = 'ftz_counts';
+
+  function loadState() {
+    const t = localStorage.getItem(LS_TOKEN_KEY);
+    const c = JSON.parse(localStorage.getItem(LS_COUNTS_KEY) || '{}');
+    return { token: t, counts: { totalSearches: c.totalSearches || 0, premiumTrialsUsed: c.premiumTrialsUsed || 0 } };
+  }
+
+  function saveCounts(counts) {
+    localStorage.setItem(LS_COUNTS_KEY, JSON.stringify(counts));
+    refreshCountsUI();
+  }
+
+  function saveToken(token) {
+    localStorage.setItem(LS_TOKEN_KEY, token);
+    refreshCountsUI();
+  }
+
+  function refreshCountsUI() {
+    const s = loadState();
+    searchLeftEl.innerText = Math.max(0, 20 - (s.counts.totalSearches || 0));
+    trialLeftEl.innerText = Math.max(0, 5 - (s.counts.premiumTrialsUsed || 0));
+  }
+
+  // Add city row
+  function makeRow() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'row';
+    wrapper.style.marginTop = '8px';
+    wrapper.innerHTML = `
+      <input class="q" placeholder="City or Country (e.g. San Diego, California)">
+      <button class="removeBtn">Remove</button>
+    `;
+    wrapper.querySelector('.removeBtn').onclick = () => wrapper.remove();
+    return wrapper;
+  }
+
+  addBtn.onclick = () => multiContainer.appendChild(makeRow());
+  if (multiContainer.children.length === 0) multiContainer.appendChild(makeRow());
+  refreshCountsUI();
+
+  // Display card
+  function addTimeCard(title, timezone, datetime, extras) {
+    const d = document.createElement('div');
+    d.className = 'time-card';
+    d.innerHTML = `<div style="font-weight:600">${title}</div>
+                   <div>${timezone || ''}</div>
+                   <div>${new Date(datetime).toLocaleString()}</div>
+                   <div style="font-size:13px;color:#475569">${extras || ''}</div>`;
+    results.prepend(d);
+  }
+
+  async function apiPost(path, body) {
+    const token = localStorage.getItem(LS_TOKEN_KEY);
+    const headers = {'Content-Type': 'application/json'};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const r = await fetch(BACKEND + path, { method: 'POST', headers, body: JSON.stringify(body) });
+    return r.json();
+  }
+
+  // Get time
+  sendBtn.onclick = async () => {
+    const rows = Array.from(document.querySelectorAll('.q')).map(i => i.value.trim()).filter(Boolean);
+    if (rows.length === 0) return alert('Add at least one city');
+    const state = loadState();
+    if (!state.token && state.counts.totalSearches >= 20) return alert('Free search limit reached. Please subscribe.');
+    results.innerHTML = '';
+
+    for (const q of rows.slice(0, 50)) {
+      try {
+        const g = await fetch(BACKEND + '/api/geocode?q=' + encodeURIComponent(q)).then(r => r.json());
+        if (!g.ok) { addTimeCard(q, 'Not found', new Date(), ''); continue; }
+        const { lat, lon, display_name } = g.location;
+        const t = await apiPost('/api/time', { lat, lon });
+        if (!t.ok) { addTimeCard(display_name, 'Error', new Date(), ''); continue; }
+        addTimeCard(display_name, t.data.timezone, t.data.datetime, `lat:${lat}, lon:${lon}`);
+        state.counts.totalSearches += 1; saveCounts(state.counts);
+      } catch(e){ console.error(e); }
+    }
+
+    const cur = loadState();
+    if (!cur.token && cur.counts.totalSearches >= 20) alert('Subscribe to continue searches.');
+  };
+
+  // IP lookup
+  ipBtn.onclick = async () => {
+    const state = loadState();
+    if (!state.token && state.counts.premiumTrialsUsed >= 1) return alert('Premium trial used.');
+    const r = await fetch(BACKEND + '/api/ip').then(x => x.json());
+    if (!r.ok) return alert('IP lookup failed');
+    const d = r.data || r;
+    const t = await apiPost('/api/time', { lat: d.latitude, lon: d.longitude });
+    if (t.ok) addTimeCard('My IP Location', t.data.timezone, t.data.datetime, `IP: ${d.ip}`);
+    if (!state.token){ state.counts.premiumTrialsUsed += 1; saveCounts(state.counts); }
+  };
+
+  // Verify Paystack redirect
+  async function checkPaystackReferenceOnLoad() {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('reference') || params.get('trxref');
+    if (!ref) return;
+    const r = await fetch(BACKEND + '/api/verify-paystack', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ reference: ref })
+    }).then(x => x.json());
+    if (r.ok && r.token){ saveToken(r.token); alert('✅ Payment verified! Premium unlocked.'); history.replaceState(null, '', location.pathname); }
+    else alert('Verification failed');
+  }
+
+  checkPaystackReferenceOnLoad();
+</script>
+</body>
+</html>
