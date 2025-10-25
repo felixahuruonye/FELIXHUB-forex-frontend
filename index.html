@@ -1,209 +1,160 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FELIXHUB Forex Time Zone</title>
+  <meta charset="utf-8" />
+  <title>Forex Timezone Pro — FelixHub</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: #f3f7fa;
-      color: #333;
-      margin: 0;
-      padding: 0;
-      text-align: center;
-    }
-
-    header {
-      background: #004aad;
-      color: white;
-      padding: 1rem 0;
-      font-size: 1.5rem;
-      font-weight: bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 30px auto;
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .country-box {
-      margin-bottom: 20px;
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 8px;
-    }
-
-    input, select, button {
-      padding: 10px;
-      margin: 8px;
-      width: 90%;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    button {
-      background-color: #004aad;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background-color: #003580;
-    }
-
-    .result-card {
-      background: #f1f5ff;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 10px;
-      border-left: 5px solid #004aad;
-    }
-
-    .premium-box {
-      background: #e9f9ec;
-      border: 1px solid #00964d;
-      border-left: 5px solid #00964d;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 8px;
-    }
+    :root{--primary:#0ea5e9;--muted:#64748b;--card-bg:#fff}
+    body{font-family:Inter,system-ui,Arial;background:#f3f4f6;padding:18px;color:#0f172a;margin:0}
+    .container{max-width:980px;margin:0 auto}
+    header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px}
+    header h1{margin:0;font-size:20px}
+    header .subtitle{color:var(--muted);font-size:13px}
+    .card{background:var(--card-bg);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:12px}
+    input, select, button{padding:10px;border-radius:8px;border:1px solid #e6e7ea;font-size:15px}
+    .row{display:flex;gap:10px;align-items:center}
+    .row .col{flex:1}
+    .row .small-col{width:110px}
+    .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+    .time-card{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:10px;border:1px solid #e6eef8}
+    .button-primary{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .button-secondary{background:#eef2f7;color:#0f172a;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .add-row-btn{display:block;width:100%;padding:12px;border-radius:10px;background:var(--primary);color:#fff;border:none;margin-top:10px}
+    .removeBtn{background:#fde68a;border:none;padding:8px;border-radius:8px;cursor:pointer}
+    .small{font-size:13px;color:var(--muted)}
+    @media(max-width:520px){.row{flex-direction:column;align-items:stretch}}
   </style>
 </head>
 <body>
-  <header>🌍 FELIXHUB Forex Time Zone</header>
-
   <div class="container">
-    <h3>Check Real-Time for Any Country</h3>
+    <header>
+      <h1>🌍 FELIXHUB WorldTimezone Pro</h1>
+      <div class="subtitle">Free trial: 10 searches + 1 IP lookup, then subscribe for full access.</div>
+    </header>
 
-    <div id="countryFormContainer">
-      <div class="country-box">
-        <select class="continent">
-          <option value="">Select Continent</option>
-          <option>Africa</option>
-          <option>Asia</option>
-          <option>Europe</option>
-          <option>North America</option>
-          <option>South America</option>
-          <option>Oceania</option>
-        </select>
-        <input type="text" placeholder="Country (e.g. Nigeria)" class="country" />
-        <input type="text" placeholder="City (e.g. Owerri)" class="city" />
+    <div class="card">
+      <div id="multiContainer"></div>
+      <button id="addBtn" class="add-row-btn">+ Add a country / city</button>
+      <div class="row" style="margin-top:12px">
+        <button id="sendBtn" class="button-primary" style="flex:1">Get Times</button>
+        <button id="ipBtn" class="button-secondary" style="width:160px;margin-left:0">Use My IP</button>
       </div>
+      <div class="small" style="margin-top:10px;">Searches left: <span id="searchLeft">10</span> • IP Trial left: <span id="trialLeft">1</span></div>
     </div>
 
-    <button id="addCountry">+ Add Another Country</button>
-    <button id="getTime">Get Time</button>
-    <button id="useMyIP">Use My IP</button>
+    <div id="results" class="results"></div>
 
-    <div id="results"></div>
-    <div id="premiumPrompt" class="premium-box" style="display:none;">
-      <h4>Upgrade to Premium 🌟</h4>
-      <p>Unlock more continents, zip codes, and forex tools by subscribing!</p>
-      <a id="paystackLink" href="https://paystack.com/pay/felixhub-forex-sub" target="_blank">
-        <button>Upgrade with Paystack</button>
+    <div class="card">
+      <h3>Upgrade to Premium</h3>
+      <p class="small">Unlock more continents, IP tools, postal codes, 100+ cities, and forex tools.</p>
+      <a href="https://paystack.shop/pay/felixhub-premium" target="_blank">
+        <button class="button-primary">Subscribe on Paystack</button>
       </a>
     </div>
+
+    <footer style="margin-top:18px;text-align:center;color:#94a3b8;">© 2025 FelixHub</footer>
   </div>
 
-  <script>
-    const backendUrl = "https://felixhub-forex-backend.onrender.com";
-    const resultsDiv = document.getElementById("results");
-    const addCountryBtn = document.getElementById("addCountry");
-    const getTimeBtn = document.getElementById("getTime");
-    const useMyIPBtn = document.getElementById("useMyIP");
-    const premiumPrompt = document.getElementById("premiumPrompt");
-    let searchCount = 0;
+<script>
+const BACKEND = "https://felixhub-forex-backend.onrender.com";
+const FREE_LIMIT = 10;
+const IP_TRIAL_LIMIT = 1;
 
-    addCountryBtn.addEventListener("click", () => {
-      const container = document.createElement("div");
-      container.classList.add("country-box");
-      container.innerHTML = `
-        <select class="continent">
-          <option value="">Select Continent</option>
-          <option>Africa</option>
-          <option>Asia</option>
-          <option>Europe</option>
-          <option>North America</option>
-          <option>South America</option>
-          <option>Oceania</option>
-        </select>
-        <input type="text" placeholder="Country (e.g. USA)" class="country" />
-        <input type="text" placeholder="City (e.g. New York)" class="city" />
-      `;
-      document.getElementById("countryFormContainer").appendChild(container);
-    });
+const multiContainer = document.getElementById('multiContainer');
+const addBtn = document.getElementById('addBtn');
+const sendBtn = document.getElementById('sendBtn');
+const ipBtn = document.getElementById('ipBtn');
+const results = document.getElementById('results');
+const searchLeftEl = document.getElementById('searchLeft');
+const trialLeftEl = document.getElementById('trialLeft');
 
-    getTimeBtn.addEventListener("click", async () => {
-      const boxes = document.querySelectorAll(".country-box");
-      resultsDiv.innerHTML = "";
-      searchCount++;
+let searches = 0;
+let ipTrials = 0;
 
-      if (searchCount > 20) {
-        premiumPrompt.style.display = "block";
-        return;
-      }
+function makeRow() {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div class="col"><input class="country" placeholder="Country (e.g. Nigeria / USA)"></div>
+    <div class="col"><input class="city" placeholder="City (e.g. Owerri / New York)"></div>
+    <div class="small-col"><button class="removeBtn">Remove</button></div>
+  `;
+  row.querySelector('.removeBtn').onclick = () => row.remove();
+  return row;
+}
 
-      for (let box of boxes) {
-        const country = box.querySelector(".country").value.trim();
-        const city = box.querySelector(".city").value.trim();
+function ensureOneRow() {
+  if (!multiContainer.children.length) multiContainer.appendChild(makeRow());
+}
+function updateCounts() {
+  searchLeftEl.textContent = FREE_LIMIT - searches;
+  trialLeftEl.textContent = IP_TRIAL_LIMIT - ipTrials;
+}
 
-        if (!country || !city) continue;
+addBtn.onclick = () => multiContainer.appendChild(makeRow());
+ensureOneRow();
+updateCounts();
 
-        try {
-          const response = await fetch(`https://worldtimeapi.org/api/timezone`);
-          const zones = await response.json();
+function addCard(title, tz, dt, extra) {
+  const div = document.createElement('div');
+  div.className = 'time-card';
+  div.innerHTML = `<b>${title}</b><br>${tz}<br>${new Date(dt).toLocaleString()}<br><span class='small'>${extra||''}</span>`;
+  results.prepend(div);
+}
 
-          const foundZone = zones.find(z =>
-            z.toLowerCase().includes(country.toLowerCase()) ||
-            z.toLowerCase().includes(city.toLowerCase())
-          );
+// Get Time by city/country
+sendBtn.onclick = async () => {
+  const rows = Array.from(document.querySelectorAll('.row'));
+  const queries = rows.map(r => {
+    const country = r.querySelector('.country').value.trim();
+    const city = r.querySelector('.city').value.trim();
+    return city ? `${city}, ${country}` : country;
+  }).filter(Boolean);
 
-          if (!foundZone) {
-            resultsDiv.innerHTML += `<div class="result-card">❌ No timezone found for ${city}, ${country}</div>`;
-            continue;
-          }
+  if (!queries.length) return alert('Please enter a city or country.');
 
-          const timeResponse = await fetch(`https://worldtimeapi.org/api/timezone/${foundZone}`);
-          const timeData = await timeResponse.json();
+  if (searches >= FREE_LIMIT) return alert('Free limit reached. Please subscribe.');
 
-          resultsDiv.innerHTML += `
-            <div class="result-card">
-              <strong>${city}, ${country}</strong><br>
-              Timezone: ${timeData.timezone}<br>
-              Local Time: ${new Date(timeData.datetime).toLocaleString()}
-            </div>
-          `;
-        } catch (err) {
-          resultsDiv.innerHTML += `<div class="result-card">⚠️ Error loading time for ${city}, ${country}</div>`;
-        }
-      }
-    });
+  for (const q of queries) {
+    try {
+      const url = `https://worldtimeapi.org/api/timezone`;
+      const resp = await fetch(url);
+      const zones = await resp.json();
 
-    useMyIPBtn.addEventListener("click", async () => {
-      try {
-        const response = await fetch(`${backendUrl}/ipinfo`);
-        const data = await response.json();
-        resultsDiv.innerHTML = `
-          <div class="result-card">
-            <strong>Your IP:</strong> ${data.ip}<br>
-            <strong>City:</strong> ${data.city}<br>
-            <strong>Country:</strong> ${data.country_name}<br>
-            <strong>Time Zone:</strong> ${data.timezone}
-          </div>
-        `;
-      } catch (err) {
-        resultsDiv.innerHTML = `<div class="result-card">⚠️ Error fetching IP info</div>`;
-      }
-    });
-  </script>
+      const match = zones.find(z => z.toLowerCase().includes(q.split(',')[0].toLowerCase()));
+      if (!match) { addCard(q, "Not found", new Date(), "Try a specific city."); continue; }
+
+      const timeRes = await fetch(`https://worldtimeapi.org/api/timezone/${match}`);
+      const t = await timeRes.json();
+      addCard(q, match, t.datetime, `UTC ${t.utc_offset}`);
+    } catch (e) {
+      addCard(q, "Error", new Date(), e.message);
+    }
+  }
+  searches++;
+  updateCounts();
+};
+
+// Use My IP (Premium)
+ipBtn.onclick = async () => {
+  if (ipTrials >= IP_TRIAL_LIMIT) return alert('Trial used. Subscribe for full IP features.');
+
+  try {
+    const res = await fetch(`${BACKEND}/api/ip`);
+    const j = await res.json();
+    if (!j || !j.data) throw new Error("No IP data");
+    const d = j.data;
+    const loc = `${d.city || ''}, ${d.country_name || ''}`;
+    const tzRes = await fetch(`https://worldtimeapi.org/api/timezone/${d.time_zone || 'Africa/Lagos'}`);
+    const tz = await tzRes.json();
+    addCard("My IP: " + d.ip, d.time_zone || 'Unknown', tz.datetime, loc);
+    ipTrials++;
+    updateCounts();
+  } catch (e) {
+    alert("IP lookup failed: " + e.message);
+  }
+};
+</script>
 </body>
 </html>
