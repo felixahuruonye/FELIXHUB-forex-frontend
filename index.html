@@ -20,8 +20,9 @@
       padding: 1rem 0;
       font-size: 1.5rem;
       font-weight: bold;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .container {
@@ -30,7 +31,14 @@
       background: white;
       padding: 25px;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .country-box {
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 8px;
     }
 
     input, select, button {
@@ -48,7 +56,9 @@
       font-weight: bold;
     }
 
-    button:hover { background-color: #003580; }
+    button:hover {
+      background-color: #003580;
+    }
 
     .result-card {
       background: #f1f5ff;
@@ -86,7 +96,7 @@
           <option>Oceania</option>
         </select>
         <input type="text" placeholder="Country (e.g. Nigeria)" class="country" />
-        <input type="text" placeholder="City (e.g. Owerri)" class="city" />
+        <input type="text" placeholder="City (e.g. Lagos)" class="city" />
       </div>
     </div>
 
@@ -106,7 +116,6 @@
   </div>
 
   <script>
-    const backendUrl = "https://felixhub-forex-backend.onrender.com";
     const resultsDiv = document.getElementById("results");
     const addCountryBtn = document.getElementById("addCountry");
     const getTimeBtn = document.getElementById("getTime");
@@ -114,7 +123,7 @@
     const premiumPrompt = document.getElementById("premiumPrompt");
     let searchCount = 0;
 
-    // Add extra country fields
+    // Add more country boxes
     addCountryBtn.addEventListener("click", () => {
       const container = document.createElement("div");
       container.classList.add("country-box");
@@ -134,7 +143,7 @@
       document.getElementById("countryFormContainer").appendChild(container);
     });
 
-    // Get real time by country/city
+    // Get time for entered countries/cities
     getTimeBtn.addEventListener("click", async () => {
       const boxes = document.querySelectorAll(".country-box");
       resultsDiv.innerHTML = "";
@@ -146,51 +155,55 @@
       }
 
       for (let box of boxes) {
+        const continent = box.querySelector(".continent").value.trim();
         const country = box.querySelector(".country").value.trim();
         const city = box.querySelector(".city").value.trim();
-        if (!country || !city) continue;
+
+        if (!continent || !city) {
+          resultsDiv.innerHTML += `<div class="result-card">⚠️ Please enter both continent and city.</div>`;
+          continue;
+        }
 
         try {
-          const query = `${city},${country}`;
-          const res = await fetch(`${backendUrl}/get-time?location=${encodeURIComponent(query)}`);
-          const data = await res.json();
+          const response = await fetch(`https://worldtimeapi.org/api/timezone/${continent}/${city}`);
+          if (!response.ok) throw new Error("Invalid Timezone");
 
-          if (!data.datetime) {
-            resultsDiv.innerHTML += `<div class="result-card">❌ Could not get time for ${city}, ${country}</div>`;
-            continue;
-          }
+          const timeData = await response.json();
+          const localTime = new Date(timeData.datetime).toLocaleString();
 
           resultsDiv.innerHTML += `
             <div class="result-card">
               <strong>${city}, ${country}</strong><br>
-              Timezone: ${data.timezone}<br>
-              Local Time: ${new Date(data.datetime).toLocaleString()}
+              Timezone: ${timeData.timezone}<br>
+              Local Time: ${localTime}
             </div>
           `;
         } catch (err) {
-          resultsDiv.innerHTML += `<div class="result-card">⚠️ Error fetching time for ${city}, ${country}</div>`;
+          resultsDiv.innerHTML += `<div class="result-card">❌ Error fetching time for ${city}, ${country}</div>`;
         }
       }
     });
 
-    // Use My IP
+    // Use My IP (show IP + location)
     useMyIPBtn.addEventListener("click", async () => {
-      resultsDiv.innerHTML = "<p>Loading your IP info...</p>";
+      resultsDiv.innerHTML = `<div class="result-card">⏳ Detecting your IP and location...</div>`;
       try {
-        const response = await fetch(`${backendUrl}/ipinfo`);
+        const response = await fetch("https://ipapi.co/json/");
         const data = await response.json();
+
+        if (data.error) throw new Error("IP Fetch Failed");
 
         resultsDiv.innerHTML = `
           <div class="result-card">
             <strong>Your IP:</strong> ${data.ip}<br>
             <strong>City:</strong> ${data.city}<br>
             <strong>Country:</strong> ${data.country_name}<br>
-            <strong>Time Zone:</strong> ${data.timezone}<br>
+            <strong>Timezone:</strong> ${data.timezone}<br>
             <strong>Local Time:</strong> ${new Date().toLocaleString("en-US", { timeZone: data.timezone })}
           </div>
         `;
       } catch (err) {
-        resultsDiv.innerHTML = `<div class="result-card">⚠️ Could not fetch your IP info</div>`;
+        resultsDiv.innerHTML = `<div class="result-card">⚠️ Error detecting your IP or time zone.</div>`;
       }
     });
   </script>
