@@ -66,6 +66,7 @@
       border-radius: 8px;
       margin-top: 10px;
       border-left: 5px solid #004aad;
+      text-align: left;
     }
 
     .premium-box {
@@ -109,7 +110,7 @@
     <div id="premiumPrompt" class="premium-box" style="display:none;">
       <h4>Upgrade to Premium 🌟</h4>
       <p>Unlock more continents, zip codes, and forex tools by subscribing!</p>
-      <a id="paystackLink" href="https://paystack.com/pay/felixhub-forex-sub" target="_blank">
+      <a id="paystackLink" href="https://paystack.shop/pay/felixhub-premium" target="_blank">
         <button>Upgrade with Paystack</button>
       </a>
     </div>
@@ -121,9 +122,11 @@
     const getTimeBtn = document.getElementById("getTime");
     const useMyIPBtn = document.getElementById("useMyIP");
     const premiumPrompt = document.getElementById("premiumPrompt");
+    const paystackLink = document.getElementById("paystackLink");
     let searchCount = 0;
+    let liveIntervals = [];
 
-    // Add more country boxes
+    // Keep UI exactly the same; just improve logic
     addCountryBtn.addEventListener("click", () => {
       const container = document.createElement("div");
       container.classList.add("country-box");
@@ -143,9 +146,171 @@
       document.getElementById("countryFormContainer").appendChild(container);
     });
 
-    // Get time for entered countries/cities
+    // Helpers
+    function mapContinent(input) {
+      if (!input) return "";
+      const v = input.toLowerCase();
+      if (v.includes("america")) return "America";
+      if (v.includes("oceania")) return "Pacific";
+      if (v.includes("antarctica")) return "Antarctica";
+      // Africa, Asia, Europe keep same capitalized first letter
+      return input.charAt(0).toUpperCase() + input.slice(1);
+    }
+
+    function normalizeCityName(str) {
+      if (!str) return "";
+      // Remove commas, dots; collapse spaces; title-case words and join with underscore
+      return str
+        .replace(/[.,]/g, " ")
+        .trim()
+        .split(/\s+/)
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join("_");
+    }
+
+    async function fetchZonesList() {
+      try {
+        const r = await fetch("https://worldtimeapi.org/api/timezone");
+        if (!r.ok) return [];
+        return await r.json();
+      } catch {
+        return [];
+      }
+    }
+
+    // Try match with zones list first to get timezone name
+    function findZoneMatch(zones, continent, city, country) {
+      const cityNorm = city ? city.toLowerCase() : "";
+      const countryNorm = country ? country.toLowerCase() : "";
+      const continentMapped = continent ? mapContinent(continent) : "";
+
+      // 1) Exact candidate: Continent/CityNormalized
+      if (continentMapped && city) {
+        const candidate = `${continentMapped}/${normalizeCityName(city)}`;
+        const foundExact = zones.find(z => z.toLowerCase() === candidate.toLowerCase());
+        if (foundExact) return foundExact;
+      }
+
+      // 2) Match where last segment equals city
+      const foundByLast = zones.find(z => {
+        const parts = z.split("/");
+        const last = parts[parts.length - 1].toLowerCase();
+        return last === cityNorm || last === normalizeCityName(city).toLowerCase();
+      });
+      if (foundByLast) return foundByLast;
+
+      // 3) Contains city or country
+      const foundContain = zones.find(z => z.toLowerCase().includes(cityNorm) || z.toLowerCase().includes(countryNorm));
+      if (foundContain) return foundContain;
+
+      // 4) Match by continent then contains
+      if (continentMapped) {
+        const foundCont = zones.find(z => z.toLowerCase().startsWith(continentMapped.toLowerCase()) && (z.toLowerCase().includes(cityNorm) || z.toLowerCase().includes(countryNorm)));
+        if (foundCont) return foundCont;
+      }
+
+      return null;
+    }
+
+    // Fallback: geocode via Nominatim + timeapi.io coordinate endpoint
+    async function timeByGeocode(query) {
+      try {
+        const nom = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, {
+          headers: { "User-Agent": "FelixHub-Time-App/1.0" }
+        });
+        if (!nom.ok) return null;
+        const places = await nom.json();
+        if (!places || places.length === 0) return null;
+        const p = places[0];
+        const lat = p.lat;
+        const lon = p.lon;
+        // timeapi.io coordinate endpoint
+        const t = await fetch(`https://timeapi.io/api/Time/current/coordinate?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}`);
+        if (!t.ok) return null;
+        const tj = await t.json();
+        // timeapi returns dateTime and timeZone
+        return {
+          provider: "timeapi",
+          timezone: tj.timeZone || tj.timezone || null,
+          datetime: tj.dateTime || tj.date_time || tj.dateTimeUTC || null,
+          raw: tj
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    // Create live clock element that updates every second using timezone name (if available)
+    function createLiveClockElement(title, timezoneName, startIso) {
+      const card = document.createElement("div");
+      card.classList.add("result-card");
+      const clockId = `clock-${Math.random().toString(36).slice(2,9)}`;
+      card.innerHTML = `<strong>${title}</strong><br>Timezone: ${timezoneName || "unknown"}<br><span id="${clockId}">Loading...</span>`;
+      resultsDiv.appendChild(card);
+
+      // Use timezoneName if available to format. Start time from startIso or current time.
+      let currentMs = startIso ? Date.parse(startIso) : Date.now();
+
+      function update() {
+        // Use toLocaleString with timezone if provided
+        try {
+          if (timezoneName) {
+            const formatted = new Date(currentMs).toLocaleString("en-US", { timeZone: timezoneName });
+            document.getElementById(clockId).textContent = `Local Time: ${formatted}`;
+          } else {
+            document.getElementById(clockId).textContent = `Local Time: ${new Date(currentMs).toLocaleString()}`;
+          }
+        } catch {
+          document.getElementById(clockId).textContent = `Local Time: ${new Date(currentMs).toLocaleString()}`;
+        }
+        currentMs += 1000;
+      }
+
+      update();
+      const iv = setInterval(update, 1000);
+      liveIntervals.push(iv);
+    }
+
+    async function handleSingleLocation(continent, country, city) {
+      // Try worldtimeapi zone match
+      const zones = await fetchZonesList();
+      const zone = findZoneMatch(zones, continent, city, country);
+      if (zone) {
+        // get timezone data
+        try {
+          const r = await fetch(`https://worldtimeapi.org/api/timezone/${encodeURIComponent(zone)}`);
+          if (r.ok) {
+            const j = await r.json();
+            // worldtimeapi returns datetime as ISO string
+            const dt = j.datetime || j.utc_datetime || null;
+            createLiveClockElement(`${city || country}`, j.timezone || zone, dt);
+            return;
+          }
+        } catch {
+          // continue to fallback
+        }
+      }
+
+      // Fallback: use geocode + timeapi
+      const geoQuery = [city, country].filter(Boolean).join(", ");
+      const f = await timeByGeocode(geoQuery || country || city);
+      if (f && f.datetime) {
+        createLiveClockElement(`${city || country}`, f.timezone || f.provider || "unknown", f.datetime);
+        return;
+      }
+
+      // If still not found
+      const failCard = document.createElement("div");
+      failCard.classList.add("result-card");
+      failCard.innerHTML = `<strong>${city || country}</strong><br>❌ Could not determine timezone/time for this location. Try a different city or use exact city name (eg: Lagos, New_York).`;
+      resultsDiv.appendChild(failCard);
+    }
+
+    // Get Time button
     getTimeBtn.addEventListener("click", async () => {
-      const boxes = document.querySelectorAll(".country-box");
+      // clear existing intervals
+      liveIntervals.forEach(clearInterval);
+      liveIntervals = [];
       resultsDiv.innerHTML = "";
       searchCount++;
 
@@ -154,38 +319,31 @@
         return;
       }
 
+      const boxes = document.querySelectorAll(".country-box");
+      // process sequentially to avoid overloading APIs — still fast
       for (let box of boxes) {
         const continent = box.querySelector(".continent").value.trim();
         const country = box.querySelector(".country").value.trim();
         const city = box.querySelector(".city").value.trim();
 
-        if (!continent || !city) {
-          resultsDiv.innerHTML += `<div class="result-card">⚠️ Please enter both continent and city.</div>`;
+        if (!city && !country) {
+          const warn = document.createElement("div");
+          warn.classList.add("result-card");
+          warn.textContent = "⚠️ Please enter a city or a country.";
+          resultsDiv.appendChild(warn);
           continue;
         }
 
-        try {
-          const response = await fetch(`https://worldtimeapi.org/api/timezone/${continent}/${city}`);
-          if (!response.ok) throw new Error("Invalid Timezone");
-
-          const timeData = await response.json();
-          const localTime = new Date(timeData.datetime).toLocaleString();
-
-          resultsDiv.innerHTML += `
-            <div class="result-card">
-              <strong>${city}, ${country}</strong><br>
-              Timezone: ${timeData.timezone}<br>
-              Local Time: ${localTime}
-            </div>
-          `;
-        } catch (err) {
-          resultsDiv.innerHTML += `<div class="result-card">❌ Error fetching time for ${city}, ${country}</div>`;
-        }
+        // try with both city and country inputs
+        await handleSingleLocation(continent, country, city || country);
       }
     });
 
-    // Use My IP (show IP + location)
+    // Use My IP (ipapi)
     useMyIPBtn.addEventListener("click", async () => {
+      // clear intervals for previous clocks
+      liveIntervals.forEach(clearInterval);
+      liveIntervals = [];
       resultsDiv.innerHTML = `<div class="result-card">⏳ Detecting your IP and location...</div>`;
       try {
         const response = await fetch("https://ipapi.co/json/");
@@ -194,18 +352,47 @@
         if (data.error) throw new Error("IP Fetch Failed");
 
         resultsDiv.innerHTML = `
-          <div class="result-card">
+          <div class="result-card" id="ip-card">
             <strong>Your IP:</strong> ${data.ip}<br>
-            <strong>City:</strong> ${data.city}<br>
-            <strong>Country:</strong> ${data.country_name}<br>
-            <strong>Timezone:</strong> ${data.timezone}<br>
-            <strong>Local Time:</strong> ${new Date().toLocaleString("en-US", { timeZone: data.timezone })}
+            <strong>City:</strong> ${data.city || "—"}<br>
+            <strong>Country:</strong> ${data.country_name || "—"}<br>
+            <strong>Timezone:</strong> ${data.timezone || "—"}<br>
+            <div id="ip-clock">Loading time...</div>
           </div>
         `;
-      } catch (err) {
+
+        // Show live clock using the timezone from ipapi (if present), otherwise fallback to geocode/timeapi
+        if (data.timezone) {
+          let ms = Date.now();
+          function updateIP() {
+            try {
+              const formatted = new Date(ms).toLocaleString("en-US", { timeZone: data.timezone });
+              document.getElementById("ip-clock").textContent = `Local Time: ${formatted}`;
+            } catch {
+              document.getElementById("ip-clock").textContent = `Local Time: ${new Date(ms).toLocaleString()}`;
+            }
+            ms += 1000;
+          }
+          updateIP();
+          const ivi = setInterval(updateIP, 1000);
+          liveIntervals.push(ivi);
+        } else {
+          // fallback: use timeapi via geocode
+          const loc = [data.city, data.country_name].filter(Boolean).join(", ");
+          const t = await timeByGeocode(loc || data.ip);
+          if (t && t.datetime) {
+            createLiveClockElement(`IP: ${data.ip}`, t.timezone || t.provider, t.datetime);
+          } else {
+            document.getElementById("ip-clock").textContent = "Could not determine local time.";
+          }
+        }
+      } catch {
         resultsDiv.innerHTML = `<div class="result-card">⚠️ Error detecting your IP or time zone.</div>`;
       }
     });
+
+    // Make the Paystack link use your subscription page (you said you want subscription link)
+    paystackLink.href = "https://paystack.shop/pay/felixhub-premium";
   </script>
 </body>
 </html>
